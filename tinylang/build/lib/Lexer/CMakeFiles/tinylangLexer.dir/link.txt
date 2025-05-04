@@ -1,0 +1,2 @@
+/usr/local/bin/llvm-ar Dqc libtinylangLexer.a CMakeFiles/tinylangLexer.dir/Lexer.cpp.o
+/usr/local/bin/llvm-ranlib -D libtinylangLexer.a
