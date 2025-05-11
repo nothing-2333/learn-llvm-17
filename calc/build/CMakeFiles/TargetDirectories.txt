@@ -1,9 +1,0 @@
-/home/nothing/learn-llvm-17/calc/build/CMakeFiles/intrinsics_gen.dir
-/home/nothing/learn-llvm-17/calc/build/CMakeFiles/omp_gen.dir
-/home/nothing/learn-llvm-17/calc/build/CMakeFiles/acc_gen.dir
-/home/nothing/learn-llvm-17/calc/build/CMakeFiles/RISCVTargetParserTableGen.dir
-/home/nothing/learn-llvm-17/calc/build/CMakeFiles/edit_cache.dir
-/home/nothing/learn-llvm-17/calc/build/CMakeFiles/rebuild_cache.dir
-/home/nothing/learn-llvm-17/calc/build/src/CMakeFiles/calc.dir
-/home/nothing/learn-llvm-17/calc/build/src/CMakeFiles/edit_cache.dir
-/home/nothing/learn-llvm-17/calc/build/src/CMakeFiles/rebuild_cache.dir
