@@ -1,0 +1,27 @@
+[
+{
+  "directory": "/home/nothing/learn-llvm-17/Learn-LLVM-17/Chapter02/calc/build",
+  "command": "/usr/local/bin/clang++ -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fno-rtti -fno-exceptions -o src/CMakeFiles/calc.dir/Calc.cpp.o -c /home/nothing/learn-llvm-17/Learn-LLVM-17/Chapter02/calc/src/Calc.cpp",
+  "file": "/home/nothing/learn-llvm-17/Learn-LLVM-17/Chapter02/calc/src/Calc.cpp"
+},
+{
+  "directory": "/home/nothing/learn-llvm-17/Learn-LLVM-17/Chapter02/calc/build",
+  "command": "/usr/local/bin/clang++ -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fno-rtti -fno-exceptions -o src/CMakeFiles/calc.dir/CodeGen.cpp.o -c /home/nothing/learn-llvm-17/Learn-LLVM-17/Chapter02/calc/src/CodeGen.cpp",
+  "file": "/home/nothing/learn-llvm-17/Learn-LLVM-17/Chapter02/calc/src/CodeGen.cpp"
+},
+{
+  "directory": "/home/nothing/learn-llvm-17/Learn-LLVM-17/Chapter02/calc/build",
+  "command": "/usr/local/bin/clang++ -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fno-rtti -fno-exceptions -o src/CMakeFiles/calc.dir/Lexer.cpp.o -c /home/nothing/learn-llvm-17/Learn-LLVM-17/Chapter02/calc/src/Lexer.cpp",
+  "file": "/home/nothing/learn-llvm-17/Learn-LLVM-17/Chapter02/calc/src/Lexer.cpp"
+},
+{
+  "directory": "/home/nothing/learn-llvm-17/Learn-LLVM-17/Chapter02/calc/build",
+  "command": "/usr/local/bin/clang++ -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fno-rtti -fno-exceptions -o src/CMakeFiles/calc.dir/Parser.cpp.o -c /home/nothing/learn-llvm-17/Learn-LLVM-17/Chapter02/calc/src/Parser.cpp",
+  "file": "/home/nothing/learn-llvm-17/Learn-LLVM-17/Chapter02/calc/src/Parser.cpp"
+},
+{
+  "directory": "/home/nothing/learn-llvm-17/Learn-LLVM-17/Chapter02/calc/build",
+  "command": "/usr/local/bin/clang++ -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fno-rtti -fno-exceptions -o src/CMakeFiles/calc.dir/Sema.cpp.o -c /home/nothing/learn-llvm-17/Learn-LLVM-17/Chapter02/calc/src/Sema.cpp",
+  "file": "/home/nothing/learn-llvm-17/Learn-LLVM-17/Chapter02/calc/src/Sema.cpp"
+}
+]
