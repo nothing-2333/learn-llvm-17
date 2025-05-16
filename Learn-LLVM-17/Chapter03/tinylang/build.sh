@@ -1,5 +1,11 @@
-cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DLLVM_DIR=/usr/local/lib/cmake/llvm -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -S . -B ./build
-mv ./build/compile_commands.json .
+rm -rf build compile_commands.json tinylang
+
+cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+      -DLLVM_DIR=/usr/local/lib/cmake/llvm \
+      -DCMAKE_C_COMPILER=clang \
+      -DCMAKE_CXX_COMPILER=clang++ \
+      -S . -B ./build
+ln -s ./build/compile_commands.json ./
 
 cmake --build build/
-mv ./build/tools/driver/tinylang .
+ln -s ./build/tools/driver/tinylang ./

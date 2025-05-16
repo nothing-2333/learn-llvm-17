@@ -37,7 +37,7 @@ configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/tinylang/Basic/Version.inc.in
   ${CMAKE_CURRENT_BINARY_DIR}/include/tinylang/Basic/Version.inc)
 
-# 包含 Tinylang 的 CMake 模块
+# 尝试在 CMAKE_MODULE_PATH 中查找名为 AddTinylang.cmake 的文件，并将其内容包含到当前的 CMake 脚本中
 include(AddTinylang)
 
 # 包含当前构建目录和源代码目录中的头文件目录
