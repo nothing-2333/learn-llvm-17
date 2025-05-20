@@ -11,3 +11,5 @@ ln -s ./build/compile_commands.json ./
 
 cmake --build build/
 ln -s ./build/tools/driver/tinylang ./
+
+clang --target=aarch64-linux-gnu -S -emit-llvm gcd.c
