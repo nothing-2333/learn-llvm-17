@@ -308,48 +308,97 @@ void CGModule::run(ModuleDeclaration *Mod) {
 }
 ```
 ### CGProcedure 类
-可以说这个类是本章的灵魂, 还是从 `CGProcedure::run` 方法看起, 贴出注释代码(感觉这样清楚些):
+可以说这个类是本章的灵魂, 还是从 `CGProcedure::run` 方法看起, 前面这块准备工作:
 ```cpp
-void CGProcedure::run(ProcedureDeclaration *Proc) {
-  this->Proc = Proc; // 将当前过程声明保存到成员变量中
-  Fty = createFunctionType(Proc); // 创建函数类型
-  Fn = createFunction(Proc, Fty); // 根据函数类型创建 LLVM 函数
+Fty = createFunctionType(Proc); // 创建函数类型
+Fn = createFunction(Proc, Fty); // 根据函数类型创建 LLVM 函数
 
-  // 创建入口基本块
-  llvm::BasicBlock *BB = llvm::BasicBlock::Create(
-      CGM.getLLVMCtx(), "entry", Fn); // 在函数中创建一个名为 "entry" 的基本块
-  setCurr(BB); // 设置当前基本块为入口基本块
+// 创建入口基本块
+llvm::BasicBlock *BB = llvm::BasicBlock::Create(
+    CGM.getLLVMCtx(), "entry", Fn); // 在函数中创建一个名为 "entry" 的基本块
+setCurr(BB); // 设置当前基本块为入口基本块
+```
+处理函数的参数和局部变量, tinylang 的局部变量写在开头:
+```cpp
+// 处理函数的形式参数
+for (auto Pair : llvm::enumerate(Fn->args())) { // 遍历 LLVM 函数的所有参数
+  llvm::Argument *Arg = &Pair.value(); // 获取当前参数
+  FormalParameterDeclaration *FP =
+      Proc->getFormalParams()[Pair.index()]; // 获取对应的形式参数声明
+  // 为 VAR 参数创建映射（形式参数 -> LLVM 参数）
+  FormalParams[FP] = Arg; // 将形式参数与 LLVM 参数关联起来
+  writeLocalVariable(Curr, FP, Arg); // 将参数值写入当前基本块的局部变量定义表
+}
 
-  // 处理函数的形式参数
-  for (auto Pair : llvm::enumerate(Fn->args())) { // 遍历 LLVM 函数的所有参数
-    llvm::Argument *Arg = &Pair.value(); // 获取当前参数
-    FormalParameterDeclaration *FP =
-        Proc->getFormalParams()[Pair.index()]; // 获取对应的形式参数声明
-    // 为 VAR 参数创建映射（形式参数 -> LLVM 参数）
-    FormalParams[FP] = Arg; // 将形式参数与 LLVM 参数关联起来
-    writeLocalVariable(Curr, FP, Arg); // 将参数值写入当前基本块的局部变量定义表
-  }
-
-  // 处理过程中的变量声明
-  for (auto *D : Proc->getDecls()) { // 遍历过程中的所有声明
-    if (auto *Var = llvm::dyn_cast<VariableDeclaration>(D)) { // 如果是变量声明
-      llvm::Type *Ty = mapType(Var); // 将变量声明映射为 LLVM 类型
-      if (Ty->isAggregateType()) { // 如果是聚合类型（如结构体或数组）
-        // 为变量分配栈内存
-        llvm::Value *Val = Builder.CreateAlloca(Ty); // 在栈上为变量分配内存
-        writeLocalVariable(Curr, Var, Val); // 将分配的内存地址写入局部变量定义表
-      }
+// 处理过程中的变量声明
+for (auto *D : Proc->getDecls()) { // 遍历过程中的所有声明
+  if (auto *Var = llvm::dyn_cast<VariableDeclaration>(D)) { // 如果是变量声明
+    llvm::Type *Ty = mapType(Var); // 将变量声明映射为 LLVM 类型
+    if (Ty->isAggregateType()) { // 如果是聚合类型（如结构体或数组）
+      // 为变量分配栈内存
+      llvm::Value *Val = Builder.CreateAlloca(Ty); // 在栈上为变量分配内存
+      writeLocalVariable(Curr, Var, Val); // 将分配的内存地址写入局部变量定义表
     }
   }
-
-  // 生成过程中的语句
-  auto Block = Proc->getStmts(); // 获取过程中的语句块
-  emit(Proc->getStmts()); // 递归处理语句块中的所有语句
-
-  // 检查是否需要添加默认的返回指令
-  if (!Curr->getTerminator()) { // 如果当前基本块没有终止指令
-    Builder.CreateRetVoid(); // 添加一个空返回指令
-  }
-  sealBlock(Curr); // 封闭当前基本块，完成代码生成
 }
 ```
+这是我们的重点, 为不同节点类型生成 ir:
+```cpp
+// 生成过程中的语句
+auto Block = Proc->getStmts(); // 获取过程中的语句块
+emit(Proc->getStmts()); // 递归处理语句块中的所有语句
+
+// 检查是否需要添加默认的返回指令
+if (!Curr->getTerminator()) { // 如果当前基本块没有终止指令
+  Builder.CreateRetVoid(); // 添加一个空返回指令
+}
+sealBlock(Curr); // 封闭当前基本块，完成代码生成
+```
+进入 `emit` 函数, 这个比较容易看就不注释了:
+```cpp
+void CGProcedure::emit(const StmtList &Stmts) {
+  for (auto *S : Stmts) {
+    if (auto *Stmt = llvm::dyn_cast<AssignmentStatement>(S))
+      emitStmt(Stmt);
+    else if (auto *Stmt =
+                 llvm::dyn_cast<ProcedureCallStatement>(S))
+      emitStmt(Stmt);
+    else if (auto *Stmt = llvm::dyn_cast<IfStatement>(S))
+      emitStmt(Stmt);
+    else if (auto *Stmt = llvm::dyn_cast<WhileStatement>(S))
+      emitStmt(Stmt);
+    else if (auto *Stmt =
+                 llvm::dyn_cast<ReturnStatement>(S))
+      emitStmt(Stmt);
+    else
+      llvm_unreachable("Unknown statement");
+  }
+}
+```
+就是利用 `emitStmt` 的重载去处理不同节点类型, 有点像前面见过的递归下降(我决定本质是一个东西, 就是递归去解析, 每个函数负责一个领域, 定义好出口, 这样递归下去会自己找到路)。基本块要自己判断, while、 if 类型的节点就会有很多基本快, 赋值就不会, 通过 `setCurr` 函数设置当前的基本块是哪个, 记录块间跳转关系, 也就是在构建控制流图CFG。
+
+关于 `使用AST 编号生成SSA 格式的IR 代码` 为了将 ast 转成 SSA 格式, 定义了如下结构体:
+```cpp
+struct BasicBlockDef {
+  // 将变量（或形式参数）映射到其定义的值。
+  // 使用llvm::DenseMap存储变量声明（Decl）到LLVM值（llvm::Value）的映射。
+  // llvm::TrackingVH<llvm::Value> 是一个智能指针，用于跟踪LLVM值的生命周期。
+  llvm::DenseMap<Decl *, llvm::TrackingVH<llvm::Value>> Defs;
+
+  // 存储尚未完成的phi指令的集合。
+  // Phi指令通常用于表示控制流合并点的值，需要在所有前驱基本块确定后才能完成。
+  // 这里将phi指令（llvm::PHINode）映射到对应的变量声明（Decl）。
+  llvm::DenseMap<llvm::PHINode *, Decl *> IncompletePhis;
+
+  // 标记基本块是否已封闭（sealed）。
+  // 如果基本块已封闭，则表示不会再有新的前驱基本块添加到该基本块。
+  // 这是一个位字段，占用1位。
+  unsigned Sealed : 1;
+
+  // 构造函数，初始化Sealed为0（表示基本块未封闭）。
+  BasicBlockDef() : Sealed(0) {}
+};
+```
+关于 SSA 这一块, 需要明确一点: ast 中一个变量可以对应很多值, 在 llvm ir 中一个变量对应一个值(严格来说不完全是这样, 遵循 SSA)。在生成 ir 时, 传入的都是值, 而不是变量, llvm 会为每个值生成编号也就是变量名, 我们只需要传入值就好, 为此我们维护了 Defs 记录`基本块-变量定义节点-值`的映射, 以方便获取到正确的值; 
+
+在 llvm ir 中在获取变量的值的过程用到了递归检索 `readLocalVariable(PredBB, Decl)` 来解决有些变量的值在当前基本块用到了却在当前基本块找不到, 这时我们需要向前查找, 在遍历过程中有时存在尚未定义变量的值, 在去读值时, 如果在当前块找不到值时, 我们插入一条空 phi 指令 `llvm::PHINode *Phi = addEmptyPhi(BB, Decl);` 将其作为值, 同时记录尚未完成的 phi 指令 `CurrentDef[BB].IncompletePhis[Phi] = Decl;` 然后检索前驱填充 phi 指令, 如果发现 phi 是多余的, 及去除。
