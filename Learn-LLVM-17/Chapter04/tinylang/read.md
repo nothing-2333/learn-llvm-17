@@ -402,3 +402,44 @@ struct BasicBlockDef {
 关于 SSA 这一块, 需要明确一点: ast 中一个变量可以对应很多值, 在 llvm ir 中一个变量对应一个值(严格来说不完全是这样, 遵循 SSA)。在生成 ir 时, 传入的都是值, 而不是变量, llvm 会为每个值生成编号也就是变量名, 我们只需要传入值就好, 为此我们维护了 Defs 记录`基本块-变量定义节点-值`的映射, 以方便获取到正确的值; 
 
 在 llvm ir 中在获取变量的值的过程用到了递归检索 `readLocalVariable(PredBB, Decl)` 来解决有些变量的值在当前基本块用到了却在当前基本块找不到, 这时我们需要向前查找, 在遍历过程中有时存在尚未定义变量的值, 在去读值时, 如果在当前块找不到值时, 我们插入一条空 phi 指令 `llvm::PHINode *Phi = addEmptyPhi(BB, Decl);` 将其作为值, 同时记录尚未完成的 phi 指令 `CurrentDef[BB].IncompletePhis[Phi] = Decl;` 然后检索前驱填充 phi 指令, 如果发现 phi 是多余的, 及去除。
+
+再来看看这个函数:
+```cpp
+void CGProcedure::writeVariable(llvm::BasicBlock *BB, Decl *D, llvm::Value *Val) {
+  // 尝试将 Decl* 类型的 D 动态转换为 VariableDeclaration 类型
+  if (auto *V = llvm::dyn_cast<VariableDeclaration>(D)) {
+    // 检查变量声明所属的作用域
+    if (V->getEnclosingDecl() == Proc) {
+      // 如果变量声明属于当前过程（Proc），则调用 writeLocalVariable 函数
+      // 将值 Val 写入局部变量
+      writeLocalVariable(BB, D, Val);
+    } else if (V->getEnclosingDecl() == CGM.getModuleDeclaration()) {
+      // 如果变量声明属于模块作用域（全局变量），则使用 Builder.CreateStore
+      // 将值 Val 存储到全局变量中
+      Builder.CreateStore(Val, CGM.getGlobal(D));
+    } else {
+      // 如果变量声明属于嵌套过程的作用域，当前代码不支持嵌套过程
+      // 因此报告致命错误
+      llvm::report_fatal_error("Nested procedures not yet supported");
+    }
+  } 
+  // 尝试将 Decl* 类型的 D 动态转换为 FormalParameterDeclaration 类型
+  else if (auto *FP = llvm::dyn_cast<FormalParameterDeclaration>(D)) {
+    // 检查形式参数是否是引用参数（VAR 参数）
+    if (FP->isVar()) {
+      // 如果是引用参数，使用 Builder.CreateStore 将值 Val 存储到
+      // FormalParams 映射中对应的形式参数地址
+      Builder.CreateStore(Val, FormalParams[FP]);
+    } else {
+      // 如果不是引用参数，调用 writeLocalVariable 函数将值 Val 写入局部变量
+      writeLocalVariable(BB, D, Val);
+    }
+  } 
+  // 如果 D 既不是 VariableDeclaration 也不是 FormalParameterDeclaration 类型
+  else {
+    // 报告不支持的声明类型错误
+    llvm::report_fatal_error("Unsupported declaration");
+  }
+}
+```
+发现一些局部变量是调用 `writeLocalVariable` 函数写入的, 而 `writeLocalVariable` 函数只做了映射储存了值, 在用到是的时候拿出来, 而根本不会有对应的 llvm ir, 比如在代码中定义局部变量 `a = 1` 实际中根本不会有对应的 ir, 这是由于 llvm ir SSA 的性质导致的, 因为 llvm ir 变量只对应一个值, 所以像这样的赋值常量, 直接用就好了, 不需要再多定义一个变量, 类似常量传播。
