@@ -1,0 +1,66 @@
+; ModuleID = 'calc.expr'
+source_filename = "calc.expr"
+
+@a.str = private unnamed_addr constant [2 x i8] c"a\00", align 1
+@_ZTIi = external constant ptr
+@msg = private unnamed_addr constant [16 x i8] c"Divide by zero!\00", align 1
+
+define i32 @main(i32 %0, ptr %1) personality ptr @__gxx_personality_v0 {
+entry:
+  %2 = call i32 @calc_read(ptr @a.str)
+  %3 = icmp eq i32 %2, 0
+  br i1 %3, label %divbyzero, label %notzero
+
+divbyzero:                                        ; preds = %entry
+  %4 = call ptr @__cxa_allocate_exception(i64 4)
+  store i32 42, ptr %4, align 4
+  invoke void @__cxa_throw(ptr %4, ptr @_ZTIi, ptr null)
+          to label %unreachable unwind label %lpad
+
+notzero:                                          ; preds = %entry
+  %5 = sdiv i32 3, %2
+  call void @calc_write(i32 %5)
+  ret i32 0
+
+lpad:                                             ; preds = %divbyzero
+  %exc = landingpad { ptr, i32 }
+          catch ptr @_ZTIi
+  %exc.sel = extractvalue { ptr, i32 } %exc, 1
+  %6 = call i32 @llvm.eh.typeid.for(ptr @_ZTIi)
+  %7 = icmp eq i32 %exc.sel, %6
+  br i1 %7, label %match, label %resume
+
+match:                                            ; preds = %lpad
+  %exc.ptr = extractvalue { ptr, i32 } %exc, 0
+  %8 = call ptr @__cxa_begin_catch(ptr %exc.ptr)
+  %9 = call i32 @puts(ptr @msg)
+  call void @__cxa_end_catch()
+  ret i32 0
+
+resume:                                           ; preds = %lpad
+  resume { ptr, i32 } %exc
+
+unreachable:                                      ; preds = %divbyzero
+  unreachable
+}
+
+declare i32 @calc_read(ptr)
+
+declare ptr @__cxa_allocate_exception(i64)
+
+declare void @__cxa_throw(ptr, ptr, ptr)
+
+declare i32 @__gxx_personality_v0(...)
+
+; Function Attrs: nounwind memory(none)
+declare i32 @llvm.eh.typeid.for(ptr) #0
+
+declare ptr @__cxa_begin_catch(ptr)
+
+declare void @__cxa_end_catch()
+
+declare i32 @puts(ptr)
+
+declare void @calc_write(i32)
+
+attributes #0 = { nounwind memory(none) }

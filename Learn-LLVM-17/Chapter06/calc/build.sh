@@ -6,6 +6,6 @@ cd build
 ninja
 ln -s ./compile_commands.json ../
 
-./src/calc "with a: a*3" | llc -filetype=obj -relocation-model=pic -o expr.o
-clang -o ../expr ./expr.o ../rtcalc.c
+./src/calc "with a: 3/a" | llc -filetype=obj -relocation-model=pic -o expr.o
+clang++ -o ../expr ./expr.o ../rtcalc.cpp
 cd ..
