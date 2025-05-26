@@ -1,0 +1,1 @@
+clang -c runtime/runtime.c
