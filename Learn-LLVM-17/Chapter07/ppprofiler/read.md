@@ -46,3 +46,8 @@ llvm-dis example/hello_inst.bc -o -
 clang example/hello_inst.bc runtime/runtime.c
 ./a.out
 ```
+
+### clang
+```bash
+clang -fpass-plugin=PPProfiler.so example/hello.c runtime/runtime.c
+```

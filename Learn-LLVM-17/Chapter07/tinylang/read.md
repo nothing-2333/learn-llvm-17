@@ -1,1 +1,3 @@
-clang -c runtime/runtime.c
+没什么好说的, 按照书中的流程走就行了
+
+.awk 脚本可以用 py 代替
